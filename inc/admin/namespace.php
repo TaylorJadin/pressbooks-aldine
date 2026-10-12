@@ -50,9 +50,12 @@ function update_catalog() {
 	if ( ! current_user_can( 'manage_network' ) || ! check_ajax_referer( 'pressbooks-aldine-admin' ) ) {
 		return;
 	}
-	if ( isset( $_POST['book_id'] ) ) {
-		$blog_id = absint( $_POST['book_id'] );
+
+	$blog_id = isset( $_POST['book_id'] ) ? absint( $_POST['book_id'] ) : 0;
+	if ( ! $blog_id ) {
+		wp_send_json_error( 'Missing book_id', 400 );
 	}
+
 	if ( isset( $_POST['in_catalog'] ) ) {
 		$in_catalog = wp_unslash( $_POST['in_catalog'] );
 		if ( $in_catalog === 'true' ) {
@@ -60,9 +63,10 @@ function update_catalog() {
 			update_site_meta( $blog_id, BookDataCollector::IN_CATALOG, 1 );
 		} else {
 			delete_blog_option( $blog_id, \Aldine\Admin\BLOG_OPTION );
+			update_site_meta( $blog_id, BookDataCollector::IN_CATALOG, 0 );
 		}
 	}
-	update_site_meta( $blog_id, BookDataCollector::IN_CATALOG, 0 );
+
 	// Exclude book when network option book directory non-catalog exclude is enabled.
 	$option = get_site_option( 'pressbooks_sharingandprivacy_options', [], true );
 	if (
